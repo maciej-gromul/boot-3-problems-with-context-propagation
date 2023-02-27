@@ -1,0 +1,70 @@
+receivers:
+  # Spring sleuth sends only tracing information, thus we will scrape the metrics endpoint
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "app-metrics"
+          scrape_interval: 5s
+          metrics_path: '/actuator/prometheus'
+          static_configs:
+            - targets: [ "host.rancher-desktop.internal:8080" ]
+
+  # This will be used by sleuth to send traces
+  otlp:
+    protocols:
+      grpc:
+      http:
+        cors:
+          allowed_origins:
+            - "*"
+
+processors:
+  batch:
+  attributes:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: http.status_code
+
+  resource:
+    attributes:
+      - action: insert
+        key: loki.tenant
+        value: host.name
+      - action: insert
+        key: loki.attribute.labels
+        value: http.status
+      - action: insert
+        key: loki.resource.labels
+        value: host.name, pod.name
+
+exporters:
+  logging:
+    loglevel: debug
+    sampling_thereafter: 1
+
+  # Loki - logs exports
+  loki:
+    endpoint: "https://loki:3100/loki/api/v1/push"
+
+  # Mimir - metrics export, could use otlp but company uses this one so just for sanity check
+  prometheusremotewrite:
+    endpoint: "http://load-balancer:9009/api/v1/push"
+
+  # Tempo - traces export
+  otlp:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [ otlp ]
+      exporters: [ otlp ]
+    metrics:
+      receivers: [ otlp, prometheus ]
+      exporters: [ prometheusremotewrite ]
+    logs:
+      receivers: [ otlp ]
+      exporters: [ loki ]

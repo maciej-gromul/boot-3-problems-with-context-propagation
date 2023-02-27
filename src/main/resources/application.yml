@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: test
+
+logging:
+  pattern:
+    level: "%5p [%X{traceId:-},%X{spanId:-},%X{traceFlags:-}]"
+    dateformat: "HH:mm:ss"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoint:
+    metrics:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus

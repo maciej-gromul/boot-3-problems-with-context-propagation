@@ -1,0 +1,46 @@
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+    secureJsonData:
+      httpHeaderValue1: "tenant1"
+  - name: Mimir
+    uid: mimir
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://load-balancer:9009/prometheus
+    version: 1
+    editable: true
+    jsonData:
+      httpHeaderName1: 'X-Scope-OrgID'
+    secureJsonData:
+      httpHeaderValue1: 'demo'
+    isDefault: true
+  - name: Tempo
+    type: tempo
+    access: proxy
+    orgId: 1
+    url: http://tempo:3200
+    basicAuth: false
+    version: 1
+    editable: true
+    apiVersion: 1
+    uid: tempo
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: mimir
+      tracesToLogs:
+        datasourceUid: "loki"
+        filterBySpanID: true
+        filterByTraceID: true
+        lokiSearch: true
+        spanEndTimeShift: "1h"
+        spanStartTimeShift: "1h"
