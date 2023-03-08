@@ -1,6 +1,6 @@
 spring:
   application:
-    name: test
+    name: boot-3-tracing-test
 
 logging:
   pattern:
